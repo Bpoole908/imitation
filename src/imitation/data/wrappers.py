@@ -51,12 +51,12 @@ class BufferingWrapper(VecEnvWrapper):
             raise RuntimeError("BufferingWrapper reset() before samples were accessed")
         self._init_reset = True
         self.n_transitions = 0
-        obs = self.venv.reset(**kwargs)
+        obs, info = self.venv.reset(**kwargs)
         self._traj_accum = rollout.TrajectoryAccumulator()
         for i, ob in enumerate(obs):
             self._traj_accum.add_step({"obs": ob}, key=i)
         self._timesteps = np.zeros((len(obs),), dtype=int)
-        return obs
+        return obs, info
 
     def step_async(self, actions):
         assert self._init_reset
@@ -166,10 +166,8 @@ class BufferingWrapper(VecEnvWrapper):
         assert len(transitions.obs) == n_transitions
         return transitions
 
-
 class RolloutInfoWrapper(gym.Wrapper):
     """Add the entire episode's rewards and observations to `info` at episode end.
-
     Whenever done=True, `info["rollouts"]` is a dict with keys "obs" and "rews", whose
     corresponding values hold the NumPy arrays containing the raw observations and
     rewards seen during this episode.
@@ -177,7 +175,6 @@ class RolloutInfoWrapper(gym.Wrapper):
 
     def __init__(self, env: gym.Env):
         """Builds RolloutInfoWrapper.
-
         Args:
             env: Environment to wrap.
         """
@@ -186,20 +183,21 @@ class RolloutInfoWrapper(gym.Wrapper):
         self._rews = None
 
     def reset(self, **kwargs):
-        new_obs = super().reset()
+        new_obs, info = super().reset()
         self._obs = [new_obs]
         self._rews = []
-        return new_obs
+        return new_obs, info
 
     def step(self, action):
-        obs, rew, done, info = self.env.step(action)
+        obs, rew, term, trun, info = self.env.step(action)
+       
         self._obs.append(obs)
         self._rews.append(rew)
-
-        if done:
+      
+        if term or trun:
             assert "rollout" not in info
             info["rollout"] = {
                 "obs": np.stack(self._obs),
                 "rews": np.stack(self._rews),
             }
-        return obs, rew, done, info
+        return obs, rew, term, trun, info

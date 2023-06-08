@@ -17,7 +17,7 @@ from imitation.policies import serialize
 from imitation.scripts.config.train_adversarial import train_adversarial_ex
 from imitation.scripts.ingredients import demonstrations, environment
 from imitation.scripts.ingredients import logging as logging_ingredient
-from imitation.scripts.ingredients import reward, rl, train
+from imitation.scripts.ingredients import policy_evaluation, reward, rl
 
 logger = logging.getLogger("imitation.scripts.train_adversarial")
 
@@ -106,6 +106,11 @@ def train_adversarial(
         "monitor_return" key). "expert_stats" gives the return value of
         `rollout_stats()` on the expert demonstrations.
     """
+    # This allows to specify total_timesteps and checkpoint_interval in scientific
+    # notation, which is interpreted as a float by python.
+    total_timesteps = int(total_timesteps)
+    checkpoint_interval = int(checkpoint_interval)
+
     if show_config:
         # Running `train_adversarial print_config` will show unmerged config.
         # So, support showing merged config from `train_adversarial {airl,gail}`.
@@ -153,7 +158,7 @@ def train_adversarial(
                 save(trainer, log_dir / "checkpoints" / f"{round_num:05d}")
 
         trainer.train(total_timesteps, callback)
-        imit_stats = train.eval_policy(trainer.policy, trainer.venv_train)
+        imit_stats = policy_evaluation.eval_policy(trainer.policy, trainer.venv_train)
 
     # Save final artifacts.
     if checkpoint_interval >= 0:

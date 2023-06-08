@@ -13,17 +13,16 @@ import torch as th
 from sacred.observers import FileStorageObserver
 from stable_baselines3.common import type_aliases
 
+import imitation.data.serialize as data_serialize
+import imitation.policies.serialize as policies_serialize
 from imitation.algorithms import preference_comparisons
-from imitation.data import types
-from imitation.policies import serialize
 from imitation.scripts.config.train_preference_comparisons import (
     train_preference_comparisons_ex,
 )
 from imitation.scripts.ingredients import environment
 from imitation.scripts.ingredients import logging as logging_ingredient
-from imitation.scripts.ingredients import reward
+from imitation.scripts.ingredients import policy_evaluation, reward
 from imitation.scripts.ingredients import rl as rl_common
-from imitation.scripts.ingredients import train
 
 
 def save_model(
@@ -31,7 +30,7 @@ def save_model(
     save_path: pathlib.Path,
 ):
     """Save the model as `model.zip`."""
-    serialize.save_stable_model(
+    policies_serialize.save_stable_model(
         output_dir=save_path / "policy",
         model=agent_trainer.algorithm,
     )
@@ -153,6 +152,18 @@ def train_preference_comparisons(
     Raises:
         ValueError: Inconsistency between config and deserialized policy normalization.
     """
+    # This allows to specify total_timesteps, total_comparisons etc. in scientific
+    # notation, which is interpreted as a float by python.
+    total_timesteps = int(total_timesteps)
+    total_comparisons = int(total_comparisons)
+    num_iterations = int(num_iterations)
+    comparison_queue_size = (
+        int(comparison_queue_size) if comparison_queue_size is not None else None
+    )
+    fragment_length = int(fragment_length)
+    active_selection_oversampling = int(active_selection_oversampling)
+    checkpoint_interval = int(checkpoint_interval)
+
     custom_logger, log_dir = logging_ingredient.setup_logging()
 
     with environment.make_venv() as venv:
@@ -194,7 +205,9 @@ def train_preference_comparisons(
                     "exploration_frac can't be set when a trajectory dataset is used",
                 )
             trajectory_generator = preference_comparisons.TrajectoryDataset(
-                trajectories=types.load_with_rewards(trajectory_path),
+                trajectories=data_serialize.load_with_rewards(
+                    trajectory_path,
+                ),
                 rng=_rnd,
                 custom_logger=custom_logger,
                 **trajectory_generator_kwargs,
@@ -267,7 +280,7 @@ def train_preference_comparisons(
         # Storing and evaluating policy only useful if we generated trajectory data
         if bool(trajectory_path is None):
             results = dict(results)
-            results["rollout"] = train.eval_policy(agent, venv)
+            results["rollout"] = policy_evaluation.eval_policy(agent, venv)
 
     if save_preferences:
         main_trainer.dataset.save(log_dir / "preferences.pkl")

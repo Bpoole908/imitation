@@ -18,7 +18,7 @@ ATARI_REQUIRE = [
     "opencv-python",
     # "ale-py==0.7.4",
     "pillow",
-    "autorom[accept-rom-license]~=0.4.2",
+    "autorom[accept-rom-license]~=0.6.0",
 ]
 PYTYPE = ["pytype==2022.7.26"] if IS_NOT_WINDOWS else []
 STABLE_BASELINES3 = "stable-baselines3>=1.7.0"
@@ -205,11 +205,10 @@ setup(
         "scikit-learn>=0.21.2",
         "seals>=0.1.5",
         STABLE_BASELINES3,
-        # TODO(adam) switch to upstream release if they make it
-        #  See https://github.com/IDSIA/sacred/issues/879
-        "chai-sacred>=0.8.3",
+        "sacred>=0.8.4",
         "tensorboard>=1.14",
         "huggingface_sb3>=2.2.1",
+        "datasets>=2.8.0",
     ],
     tests_require=TESTS_REQUIRE,
     extras_require={

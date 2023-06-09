@@ -1,4 +1,7 @@
 """Fixtures common across tests."""
+import sys
+import gymnasium 
+sys.modules['gym'] = gymnasium
 
 import numpy as np
 import pytest

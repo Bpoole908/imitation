@@ -24,7 +24,7 @@ PYTYPE = ["pytype==2022.7.26"] if IS_NOT_WINDOWS else []
 STABLE_BASELINES3 = "stable-baselines3>=1.7.0"
 # pinned to 0.21 until https://github.com/DLR-RM/stable-baselines3/pull/780 goes
 # upstream.
-GYM_VERSION_SPECIFIER = "==0.26.2"
+GYM_VERSION_SPECIFIER = ">=0.28.1"
 
 # Note: the versions of the test and doc requirements should be tightly pinned to known
 #   working versions to make our CI/CD pipeline as stable as possible.
@@ -174,7 +174,6 @@ def get_local_version(version: "ScmVersion", time_format="%Y%m%d") -> str:
         time_format=time_format,
     )
 
-
 setup(
     cmdclass={"install": InstallCommand},
     name="imitation",
@@ -193,7 +192,7 @@ setup(
     #   encode only known incompatibilities here. This prevents nasty dependency issues
     #   for our users.
     install_requires=[
-        "gym[classic_control]" + GYM_VERSION_SPECIFIER,
+        "gymnasium[classic_control]" + GYM_VERSION_SPECIFIER,
         # TODO(adam): remove pyglet dependency once Gym upgraded to >0.21
         # Workaround for https://github.com/openai/gym/issues/2986
         # Discussed in https://github.com/HumanCompatibleAI/imitation/pull/603
@@ -228,7 +227,7 @@ setup(
         "docs": DOCS_REQUIRE,
         "parallel": PARALLEL_REQUIRE,
         "mujoco": [
-            "gym[classic_control,mujoco]" + GYM_VERSION_SPECIFIER,
+            "gymnasium[classic_control,mujoco]" + GYM_VERSION_SPECIFIER,
         ],
         "atari": ATARI_REQUIRE,
     },
